@@ -1,0 +1,35 @@
+{
+    "@@locale": "en",
+    "routines": "Routines",
+    "noRoutines": "No routines defined yet.",
+    "newRoutine": "NEW ROUTINE",
+    "profile": "Profile",
+    "name": "Name",
+    "birthDate": "Birth Date",
+    "ageLabel": "Age: {age}",
+    "@ageLabel": {
+        "placeholders": {
+            "age": {
+                "type": "int"
+            }
+        }
+    },
+    "weightTracking": "Weight Tracking",
+    "weight": "Weight",
+    "addWeight": "Add Weight",
+    "editWeight": "Edit Weight",
+    "date": "Date",
+    "noWeightData": "No weight data yet.",
+    "language": "Language",
+    "systemDefault": "System Default",
+    "english": "English",
+    "spanish": "Spanish",
+    "portuguese": "Portuguese",
+    "save": "Save",
+    "profileUpdated": "Profile updated successfully.",
+    "weightUnit": "Weight Unit",
+    "kilos": "Kilos (kg)",
+    "pounds": "Pounds (lbs)",
+    "health": "Health",
+    "workout": "Workout"
+}
