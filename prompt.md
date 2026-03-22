@@ -20,7 +20,10 @@ _Use this file to draft long prompts, new feature requests, or complex instructi
 - **Objective:** Show a graph with the Weights over time
 - **Key Details:**
   - On Weight tracking Screen add a graph showing Weight progression over time. This is generated using the weight filled in by the user. 
+  - Only show the date in the x axis when we have a plot related in Y axis
+  - Dont let te user add a weight for a given date more than once
   
 
 - **Specific Rules or Constraints:** 
 - All new features must be under the i18n feature
+

@@ -21,6 +21,15 @@ class _HealthDashboardScreenState extends ConsumerState<HealthDashboardScreen> {
     DateTime selectedDate = entry?.date ?? DateTime.now();
     final weightController = TextEditingController(text: entry?.weight.toString() ?? '');
     final profile = ref.read(profileProvider);
+    String? errorMessage;
+
+    bool isDuplicateDate(DateTime date, String? id) {
+      return profile.weightHistory.any((e) =>
+          e.id != id &&
+          e.date.year == date.year &&
+          e.date.month == date.month &&
+          e.date.day == date.day);
+    }
 
     final result = await showDialog<WeightEntry>(
       context: context,
@@ -65,6 +74,10 @@ class _HealthDashboardScreenState extends ConsumerState<HealthDashboardScreen> {
                       border: const OutlineInputBorder(),
                     ),
                   ),
+                  if (errorMessage != null) ...[
+                    const SizedBox(height: 8),
+                    Text(errorMessage!, style: const TextStyle(color: Colors.red, fontSize: 12)),
+                  ],
                 ],
               ),
               actions: [
@@ -75,6 +88,13 @@ class _HealthDashboardScreenState extends ConsumerState<HealthDashboardScreen> {
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent),
                   onPressed: () {
+                    if (isDuplicateDate(selectedDate, entry?.id)) {
+                      setDialogState(() {
+                        errorMessage = 'A weight entry already exists for this date.';
+                      });
+                      return;
+                    }
+
                     final weightValue = double.tryParse(weightController.text);
                     if (weightValue != null) {
                       final newEntry = WeightEntry(
@@ -154,7 +174,7 @@ class _HealthDashboardScreenState extends ConsumerState<HealthDashboardScreen> {
                   showTitles: true,
                   getTitlesWidget: (value, meta) {
                     final index = value.toInt();
-                    if (index >= 0 && index < sortedHistory.length && (index == 0 || index == sortedHistory.length -1 || index % (sortedHistory.length~/3 + 1) == 0)) {
+                    if (index >= 0 && index < sortedHistory.length && value == index.toDouble()) {
                       return Padding(
                         padding: const EdgeInsets.only(top: 8.0),
                         child: Text(DateFormat('MM/dd').format(sortedHistory[index].date), style: const TextStyle(color: AppColors.textSecondary, fontSize: 10)),
