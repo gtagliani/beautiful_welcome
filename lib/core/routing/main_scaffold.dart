@@ -23,6 +23,19 @@ class MainScaffold extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
 
     return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          navigationShell.currentIndex == 0 
+              ? (l10n?.workout ?? 'Workout') 
+              : (l10n?.health ?? 'Health'),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.person),
+            onPressed: () => context.push('/profile'),
+          ),
+        ],
+      ),
       body: navigationShell,
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: navigationShell.currentIndex,

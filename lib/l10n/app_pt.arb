@@ -24,5 +24,16 @@
     "kilos": "Quilos (kg)",
     "pounds": "Libras (lbs)",
     "health": "Saúde",
-    "workout": "Treino"
+    "workout": "Treino",
+    "welcomeTitle": "Beautiful Body",
+    "welcomeSubtitle": "Seu companheiro de treino profissional.",
+    "getStarted": "Começar",
+    "mainObjective": "Objetivo Principal",
+    "sets": "Séries",
+    "restTime": "Tempo de Descanso (seg)",
+    "notes": "Notas",
+    "trackSession": "Registrar Sessão",
+    "observations": "Observações",
+    "weightUsed": "Peso Utilizado",
+    "pictures": "Imagens"
 }

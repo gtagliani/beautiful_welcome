@@ -2,52 +2,117 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:math' as math;
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:beautiful_welcome/core/models/fitness_models.dart';
 import 'package:beautiful_welcome/core/theme/app_colors.dart';
 import 'package:beautiful_welcome/features/routines/providers/routine_provider.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class CreateRoutineScreen extends ConsumerStatefulWidget {
-  const CreateRoutineScreen({super.key});
+  final String? routineId;
+  const CreateRoutineScreen({super.key, this.routineId});
 
   @override
   ConsumerState<CreateRoutineScreen> createState() => _CreateRoutineScreenState();
 }
 
 class ExerciseForm {
+  String? id;
   final TextEditingController name = TextEditingController();
   final TextEditingController link = TextEditingController();
   final TextEditingController desc = TextEditingController();
+  final TextEditingController sets = TextEditingController(text: '3');
+  final TextEditingController restTime = TextEditingController(text: '1.5');
+  List<String> pictures = [];
 }
 
 class DayForm {
+  String? id;
   final TextEditingController name = TextEditingController();
-  final List<ExerciseForm> exercises = [ExerciseForm()];
+  List<ExerciseForm> exercises = [ExerciseForm()];
 }
 
 class _CreateRoutineScreenState extends ConsumerState<CreateRoutineScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  final _mainObjectiveController = TextEditingController();
   final _descController = TextEditingController();
-  final List<DayForm> _days = [DayForm()..name.text = 'Day 1'];
+  List<DayForm> _days = [DayForm()..name.text = 'Day 1'];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.routineId != null) {
+        final routines = ref.read(routineProvider);
+        try {
+          final routine = routines.firstWhere((r) => r.id == widget.routineId);
+          setState(() {
+            _nameController.text = routine.name;
+            _mainObjectiveController.text = routine.mainObjective;
+            _descController.text = routine.description;
+            _days = routine.days.map((d) {
+              final dayForm = DayForm()
+                ..id = d.id
+                ..name.text = d.name;
+              dayForm.exercises = d.exercises.map((e) {
+                final exForm = ExerciseForm()
+                  ..id = e.id
+                  ..name.text = e.name
+                  ..link.text = e.youtubeLink
+                  ..desc.text = e.description
+                  ..sets.text = e.sets.toString()
+                  ..restTime.text = e.restTime.toString()
+                  ..pictures = List.from(e.pictures);
+                return exForm;
+              }).toList();
+              return dayForm;
+            }).toList();
+          });
+        } catch (_) {}
+      }
+    });
+  }
 
   String _generateId() => DateTime.now().millisecondsSinceEpoch.toString() + math.Random().nextInt(1000).toString();
+
+  Future<void> _pickImage(ExerciseForm ex) async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        ex.pictures.add(pickedFile.path);
+      });
+    }
+  }
 
   void _saveRoutine() {
     if (_formKey.currentState!.validate()) {
       final routine = Routine(
-        id: _generateId(),
+        id: widget.routineId ?? _generateId(),
         name: _nameController.text,
+        mainObjective: _mainObjectiveController.text,
         description: _descController.text,
-        days: _days.map((d) {
+        days: _days.asMap().entries.map((dayEntry) {
+          final int dayIndex = dayEntry.key;
+          final DayForm d = dayEntry.value;
           return RoutineDay(
-            id: _generateId(),
+            id: d.id ?? _generateId(),
+            day: dayIndex + 1,
             name: d.name.text,
-            exercises: d.exercises.map((e) {
+            exercises: d.exercises.asMap().entries.map((exEntry) {
+              final int exIndex = exEntry.key;
+              final ExerciseForm e = exEntry.value;
               return WorkoutExercise(
-                id: _generateId(),
+                id: e.id ?? _generateId(),
+                sequence: exIndex + 1,
                 name: e.name.text,
                 youtubeLink: e.link.text,
                 description: e.desc.text,
+                pictures: e.pictures,
+                sets: int.tryParse(e.sets.text) ?? 3,
+                restTime: double.tryParse(e.restTime.text) ?? 1.5,
               );
             }).toList(),
           );
@@ -61,10 +126,17 @@ class _CreateRoutineScreenState extends ConsumerState<CreateRoutineScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final isEditing = widget.routineId != null;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('NEW ROUTINE'),
+        title: Text(isEditing ? 'EDIT ROUTINE' : (l10n?.newRoutine ?? 'NEW ROUTINE')),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.person),
+            onPressed: () => context.push('/profile'),
+          ),
           IconButton(
             onPressed: _saveRoutine,
             icon: const Icon(Icons.check_circle, color: AppColors.accent, size: 28),
@@ -80,7 +152,13 @@ class _CreateRoutineScreenState extends ConsumerState<CreateRoutineScreen> {
             TextFormField(
               controller: _nameController,
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              decoration: const InputDecoration(labelText: 'Routine Name*', hintText: 'e.g., Push/Pull/Legs'),
+              decoration: InputDecoration(labelText: '${l10n?.name ?? 'Routine Name'}*', hintText: 'e.g., Push/Pull/Legs'),
+              validator: (v) => v!.isEmpty ? 'Required' : null,
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _mainObjectiveController,
+              decoration: InputDecoration(labelText: '${l10n?.mainObjective ?? 'Main Objective'}*', hintText: 'e.g., Hypertrophy'),
               validator: (v) => v!.isEmpty ? 'Required' : null,
             ),
             const SizedBox(height: 16),
@@ -138,18 +216,74 @@ class _CreateRoutineScreenState extends ConsumerState<CreateRoutineScreen> {
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text('EXERCISE ${exIndex + 1}', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textSecondary, letterSpacing: 1.1)),
-                                  if (day.exercises.length > 1)
-                                    InkWell(
-                                      onTap: () => setState(() => day.exercises.removeAt(exIndex)),
-                                      child: const Icon(Icons.close, size: 20, color: Colors.redAccent),
-                                    )
+                                  Row(
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.photo_library, color: AppColors.accent),
+                                        onPressed: () => _pickImage(ex),
+                                        tooltip: 'Add Picture',
+                                      ),
+                                      if (day.exercises.length > 1)
+                                        InkWell(
+                                          onTap: () => setState(() => day.exercises.removeAt(exIndex)),
+                                          child: const Icon(Icons.close, size: 24, color: Colors.redAccent),
+                                        ),
+                                    ],
+                                  )
                                 ],
                               ),
+                              if (ex.pictures.isNotEmpty)
+                                SizedBox(
+                                  height: 60,
+                                  child: ListView.builder(
+                                    scrollDirection: Axis.horizontal,
+                                    itemCount: ex.pictures.length,
+                                    itemBuilder: (context, index) {
+                                      return Padding(
+                                        padding: const EdgeInsets.only(right: 8.0, top: 8.0),
+                                        child: Stack(
+                                          children: [
+                                            Image.file(File(ex.pictures[index]), width: 50, height: 50, fit: BoxFit.cover),
+                                            Positioned(
+                                              right: 0, top: 0,
+                                              child: InkWell(
+                                                onTap: () => setState(() => ex.pictures.removeAt(index)),
+                                                child: const Icon(Icons.cancel, color: Colors.red, size: 16),
+                                              ),
+                                            )
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
                               const SizedBox(height: 12),
                               TextFormField(
                                 controller: ex.name,
-                                decoration: const InputDecoration(labelText: 'Exercise Name*', hintText: 'e.g., Squat'),
+                                decoration: InputDecoration(labelText: '${l10n?.name ?? 'Exercise Name'}*', hintText: 'e.g., Squat'),
                                 validator: (v) => v!.isEmpty ? 'Required' : null,
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: TextFormField(
+                                      controller: ex.sets,
+                                      keyboardType: TextInputType.number,
+                                      decoration: InputDecoration(labelText: '${l10n?.sets ?? 'Sets'}*'),
+                                      validator: (v) => (v == null || v.isEmpty || int.parse(v) < 1) ? '>= 1 required' : null,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: TextFormField(
+                                      controller: ex.restTime,
+                                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                      decoration: InputDecoration(labelText: '${l10n?.restTime ?? 'Rest (minutes)'}*'),
+                                      validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+                                    ),
+                                  ),
+                                ],
                               ),
                               const SizedBox(height: 12),
                               TextFormField(
@@ -159,7 +293,7 @@ class _CreateRoutineScreenState extends ConsumerState<CreateRoutineScreen> {
                               const SizedBox(height: 12),
                                TextFormField(
                                 controller: ex.desc,
-                                decoration: const InputDecoration(labelText: 'Details / Sets & Reps', hintText: '4 sets of 10'),
+                                decoration: const InputDecoration(labelText: 'Details', hintText: 'Form details'),
                                 maxLines: 2,
                               ),
                             ],

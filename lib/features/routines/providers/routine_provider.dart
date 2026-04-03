@@ -25,17 +25,22 @@ class RoutineNotifier extends Notifier<List<Routine>> {
           Routine(
             id: 'demo1',
             name: 'Push Day - Hypertrophy',
+            mainObjective: 'Hypertrophy',
             description: 'Intense chest, shoulders, and triceps focus.',
             days: [
               RoutineDay(
                 id: 'd1',
+                day: 1,
                 name: 'Chest Focus',
                 exercises: [
                   WorkoutExercise(
                     id: 'e1',
+                    sequence: 1,
                     name: 'Bench Press',
                     youtubeLink: '',
                     description: '4 sets of 8-10 reps',
+                    sets: 4,
+                    restTime: 1.5,
                   )
                 ]
               )
@@ -49,10 +54,26 @@ class RoutineNotifier extends Notifier<List<Routine>> {
   }
 
   Future<void> saveRoutine(Routine routine) async {
-    final newState = [...state, routine];
+    final newState = [...state];
+    final index = newState.indexWhere((r) => r.id == routine.id);
+    if (index >= 0) {
+      newState[index] = routine;
+    } else {
+      newState.add(routine);
+    }
     state = newState;
+    await _saveToStorage();
+  }
+
+  Future<void> deleteRoutine(String routineId) async {
+    final newState = state.where((r) => r.id != routineId).toList();
+    state = newState;
+    await _saveToStorage();
+  }
+
+  Future<void> _saveToStorage() async {
     final prefs = await SharedPreferences.getInstance();
-    final jsonList = newState.map((r) => r.toMap()).toList();
+    final jsonList = state.map((r) => r.toMap()).toList();
     await prefs.setString(_storageKey, json.encode(jsonList));
   }
 }

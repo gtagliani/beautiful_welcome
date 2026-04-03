@@ -224,9 +224,6 @@ class _HealthDashboardScreenState extends ConsumerState<HealthDashboardScreen> {
     final unitString = profile.weightUnit == 'lbs' ? (l10n?.pounds ?? 'lbs') : (l10n?.kilos ?? 'kg');
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n?.health ?? 'Health'),
-      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(

@@ -28,10 +28,26 @@ class TrackingNotifier extends Notifier<List<WorkoutLog>> {
   }
 
   Future<void> saveLog(WorkoutLog log) async {
-    final newState = [...state, log];
+    final newState = List<WorkoutLog>.from(state);
+    final index = newState.indexWhere((l) => l.id == log.id);
+    if (index >= 0) {
+      newState[index] = log;
+    } else {
+      newState.add(log);
+    }
     state = newState;
+    await _saveToStorage();
+  }
+
+  Future<void> deleteLogsForRoutine(String routineId) async {
+    final newState = state.where((log) => log.routineId != routineId).toList();
+    state = newState;
+    await _saveToStorage();
+  }
+
+  Future<void> _saveToStorage() async {
     final prefs = await SharedPreferences.getInstance();
-    final jsonList = newState.map((r) => r.toMap()).toList();
+    final jsonList = state.map((r) => r.toMap()).toList();
     await prefs.setString(_storageKey, json.encode(jsonList));
   }
 }

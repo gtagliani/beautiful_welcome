@@ -4,13 +4,24 @@ import 'package:beautiful_welcome/features/routines/presentation/screens/routine
 import 'package:beautiful_welcome/features/routines/presentation/screens/create_routine_screen.dart';
 import 'package:beautiful_welcome/features/tracking/presentation/screens/track_workout_screen.dart';
 import 'package:beautiful_welcome/features/profile/presentation/screens/profile_screen.dart';
-
 import 'package:beautiful_welcome/features/health/presentation/screens/health_dashboard_screen.dart';
+import 'package:beautiful_welcome/features/welcome/presentation/screens/welcome_screen.dart';
 import 'package:beautiful_welcome/core/routing/main_scaffold.dart';
 
 final appRouter = GoRouter(
-  initialLocation: '/workout',
+  initialLocation: '/welcome',
   routes: [
+    GoRoute(
+      path: '/welcome',
+      pageBuilder: (context, state) {
+        return CustomTransitionPage(
+          child: const WelcomeScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+        );
+      },
+    ),
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) {
         return MainScaffold(navigationShell: navigationShell);
@@ -36,13 +47,30 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/profile',
-      builder: (context, state) => const ProfileScreen(),
+      pageBuilder: (context, state) {
+        return CustomTransitionPage(
+          child: const ProfileScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, 1), // Slide up from bottom
+                end: Offset.zero,
+              ).animate(CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeOutCubic,
+              )),
+              child: child,
+            );
+          },
+        );
+      },
     ),
     GoRoute(
       path: '/create-routine',
       pageBuilder: (context, state) {
+        final routineId = state.uri.queryParameters['id'];
         return CustomTransitionPage(
-          child: const CreateRoutineScreen(),
+          child: CreateRoutineScreen(routineId: routineId),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return FadeTransition(opacity: animation, child: child);
           },

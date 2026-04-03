@@ -31,5 +31,16 @@
     "kilos": "Kilos (kg)",
     "pounds": "Pounds (lbs)",
     "health": "Health",
-    "workout": "Workout"
+    "workout": "Workout",
+    "welcomeTitle": "Beautiful Body",
+    "welcomeSubtitle": "Your professional workout companion.",
+    "getStarted": "Get Started",
+    "mainObjective": "Main Objective",
+    "sets": "Sets",
+    "restTime": "Rest Time (seg)",
+    "notes": "Notes",
+    "trackSession": "Track Session",
+    "observations": "Observations",
+    "weightUsed": "Weight Used",
+    "pictures": "Pictures"
 }

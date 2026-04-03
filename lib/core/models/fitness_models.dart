@@ -2,43 +2,61 @@ import 'dart:convert';
 
 class WorkoutExercise {
   final String id;
-  final String name;
-  final String youtubeLink;
+  final int sequence;
+  final String name; // maps to Title in prompt
   final String description;
+  final List<String> pictures;
+  final String youtubeLink;
+  final int sets;
+  final double restTime;
 
   WorkoutExercise({
     required this.id,
+    required this.sequence,
     required this.name,
-    required this.youtubeLink,
     required this.description,
-  });
+    this.pictures = const [],
+    this.youtubeLink = '',
+    this.sets = 3,
+    required this.restTime,
+  }) : assert(sets >= 1);
 
   Map<String, dynamic> toMap() {
     return {
       'id': id,
+      'sequence': sequence,
       'name': name,
-      'youtubeLink': youtubeLink,
       'description': description,
+      'pictures': pictures,
+      'youtubeLink': youtubeLink,
+      'sets': sets,
+      'restTime': restTime,
     };
   }
 
   factory WorkoutExercise.fromMap(Map<String, dynamic> map) {
     return WorkoutExercise(
       id: map['id'] ?? '',
+      sequence: map['sequence']?.toInt() ?? 1,
       name: map['name'] ?? '',
-      youtubeLink: map['youtubeLink'] ?? '',
       description: map['description'] ?? '',
+      pictures: List<String>.from(map['pictures'] ?? []),
+      youtubeLink: map['youtubeLink'] ?? '',
+      sets: map['sets']?.toInt() ?? 3,
+      restTime: (map['restTime'] ?? 1.0).toDouble(),
     );
   }
 }
 
 class RoutineDay {
   final String id;
+  final int day; // Automatic sequence for each day
   final String name;
   final List<WorkoutExercise> exercises;
 
   RoutineDay({
     required this.id,
+    required this.day,
     required this.name,
     required this.exercises,
   });
@@ -46,6 +64,7 @@ class RoutineDay {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
+      'day': day,
       'name': name,
       'exercises': exercises.map((x) => x.toMap()).toList(),
     };
@@ -54,6 +73,7 @@ class RoutineDay {
   factory RoutineDay.fromMap(Map<String, dynamic> map) {
     return RoutineDay(
       id: map['id'] ?? '',
+      day: map['day']?.toInt() ?? 1,
       name: map['name'] ?? '',
       exercises: List<WorkoutExercise>.from(
         (map['exercises'] ?? []).map((x) => WorkoutExercise.fromMap(x)),
@@ -65,12 +85,14 @@ class RoutineDay {
 class Routine {
   final String id;
   final String name;
+  final String mainObjective;
   final String description;
   final List<RoutineDay> days;
 
   Routine({
     required this.id,
     required this.name,
+    required this.mainObjective,
     required this.description,
     required this.days,
   });
@@ -79,6 +101,7 @@ class Routine {
     return {
       'id': id,
       'name': name,
+      'mainObjective': mainObjective,
       'description': description,
       'days': days.map((x) => x.toMap()).toList(),
     };
@@ -88,6 +111,7 @@ class Routine {
     return Routine(
       id: map['id'] ?? '',
       name: map['name'] ?? '',
+      mainObjective: map['mainObjective'] ?? '',
       description: map['description'] ?? '',
       days: List<RoutineDay>.from(
         (map['days'] ?? []).map((x) => RoutineDay.fromMap(x)),
@@ -99,17 +123,47 @@ class Routine {
   factory Routine.fromJson(String source) => Routine.fromMap(json.decode(source));
 }
 
+class ExerciseLog {
+  final String exerciseId;
+  final double weight;
+  final String notes;
+
+  ExerciseLog({
+    required this.exerciseId,
+    required this.weight,
+    this.notes = '',
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'exerciseId': exerciseId,
+      'weight': weight,
+      'notes': notes,
+    };
+  }
+
+  factory ExerciseLog.fromMap(Map<String, dynamic> map) {
+    return ExerciseLog(
+      exerciseId: map['exerciseId'] ?? '',
+      weight: (map['weight'] ?? 0.0).toDouble(),
+      notes: map['notes'] ?? '',
+    );
+  }
+}
+
 class WorkoutLog {
   final String id;
   final DateTime date;
   final String routineId;
-  final String notes;
+  final String routineDayId;
+  final List<ExerciseLog> exerciseLogs;
 
   WorkoutLog({
     required this.id,
     required this.date,
     required this.routineId,
-    required this.notes,
+    required this.routineDayId,
+    required this.exerciseLogs,
   });
 
   Map<String, dynamic> toMap() {
@@ -117,16 +171,20 @@ class WorkoutLog {
       'id': id,
       'date': date.toIso8601String(),
       'routineId': routineId,
-      'notes': notes,
+      'routineDayId': routineDayId,
+      'exerciseLogs': exerciseLogs.map((x) => x.toMap()).toList(),
     };
   }
 
   factory WorkoutLog.fromMap(Map<String, dynamic> map) {
     return WorkoutLog(
       id: map['id'] ?? '',
-      date: DateTime.tryParse(map['date']) ?? DateTime.now(),
+      date: DateTime.tryParse(map['date'] ?? '') ?? DateTime.now(),
       routineId: map['routineId'] ?? '',
-      notes: map['notes'] ?? '',
+      routineDayId: map['routineDayId'] ?? '',
+      exerciseLogs: List<ExerciseLog>.from(
+        (map['exerciseLogs'] ?? []).map((x) => ExerciseLog.fromMap(x)),
+      ),
     );
   }
 
