@@ -22,13 +22,18 @@ class MainScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
 
+    String getTitle() {
+      switch (navigationShell.currentIndex) {
+        case 0: return l10n?.workout ?? 'Workout';
+        case 1: return 'History';
+        case 2: return l10n?.health ?? 'Health';
+        default: return '';
+      }
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          navigationShell.currentIndex == 0 
-              ? (l10n?.workout ?? 'Workout') 
-              : (l10n?.health ?? 'Health'),
-        ),
+        title: Text(getTitle()),
         actions: [
           IconButton(
             icon: const Icon(Icons.person),
@@ -47,6 +52,10 @@ class MainScaffold extends StatelessWidget {
           BottomNavigationBarItem(
             icon: const Icon(Icons.fitness_center),
             label: l10n?.workout ?? 'Workout',
+          ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.history),
+            label: 'History',
           ),
           BottomNavigationBarItem(
             icon: const Icon(Icons.favorite),

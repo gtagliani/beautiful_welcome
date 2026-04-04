@@ -6,6 +6,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:beautiful_welcome/core/models/fitness_models.dart';
 import 'package:beautiful_welcome/core/theme/app_colors.dart';
 import 'package:beautiful_welcome/features/routines/providers/routine_provider.dart';
+import 'package:beautiful_welcome/features/tracking/providers/tracking_provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
@@ -39,6 +40,9 @@ class _CreateRoutineScreenState extends ConsumerState<CreateRoutineScreen> {
   final _mainObjectiveController = TextEditingController();
   final _descController = TextEditingController();
   List<DayForm> _days = [DayForm()..name.text = 'Day 1'];
+
+  final List<String> _deletedDays = [];
+  final List<String> _deletedExercises = [];
 
   @override
   void initState() {
@@ -89,6 +93,13 @@ class _CreateRoutineScreenState extends ConsumerState<CreateRoutineScreen> {
 
   void _saveRoutine() {
     if (_formKey.currentState!.validate()) {
+      for (final exId in _deletedExercises) {
+        ref.read(trackingProvider.notifier).cascadeDeleteExercise(exId);
+      }
+      for (final dayId in _deletedDays) {
+        ref.read(trackingProvider.notifier).cascadeDeleteDay(dayId);
+      }
+
       final routine = Routine(
         id: widget.routineId ?? _generateId(),
         name: _nameController.text,
@@ -193,7 +204,33 @@ class _CreateRoutineScreenState extends ConsumerState<CreateRoutineScreen> {
                           if (_days.length > 1) 
                             IconButton(
                               icon: const Icon(Icons.delete, color: Colors.redAccent),
-                              onPressed: () => setState(() => _days.removeAt(dayIndex)),
+                              onPressed: () async {
+                                final dayId = day.id;
+                                if (dayId != null) {
+                                  final hasTracking = ref.read(trackingProvider.notifier).hasTrackedDay(dayId);
+                                  if (hasTracking) {
+                                    final confirm = await showDialog<bool>(
+                                      context: context,
+                                      builder: (c) => AlertDialog(
+                                        backgroundColor: AppColors.background,
+                                        title: const Text('Warning: Tracked Day', style: TextStyle(color: Colors.redAccent)),
+                                        content: const Text('This day has been tracked in the past. Deleting it will permanently delete those tracking logs to maintain consistency.\nProceed?'),
+                                        actions: [
+                                          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('CANCEL')),
+                                          ElevatedButton(
+                                            onPressed: () => Navigator.pop(c, true),
+                                            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+                                            child: const Text('DELETE', style: TextStyle(color: Colors.white)),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                    if (confirm != true) return;
+                                    _deletedDays.add(dayId);
+                                  }
+                                }
+                                setState(() => _days.removeAt(dayIndex));
+                              },
                             )
                         ],
                       ),
@@ -225,7 +262,33 @@ class _CreateRoutineScreenState extends ConsumerState<CreateRoutineScreen> {
                                       ),
                                       if (day.exercises.length > 1)
                                         InkWell(
-                                          onTap: () => setState(() => day.exercises.removeAt(exIndex)),
+                                          onTap: () async {
+                                            final exId = ex.id;
+                                            if (exId != null) {
+                                              final hasTracking = ref.read(trackingProvider.notifier).hasTrackedExercise(exId);
+                                              if (hasTracking) {
+                                                final confirm = await showDialog<bool>(
+                                                  context: context,
+                                                  builder: (c) => AlertDialog(
+                                                    backgroundColor: AppColors.background,
+                                                    title: const Text('Warning: Tracked Exercise', style: TextStyle(color: Colors.redAccent)),
+                                                    content: const Text('This exercise has been tracked in the past. Removing it will delete its logs from your history to maintain consistency.\nProceed?'),
+                                                    actions: [
+                                                      TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('CANCEL')),
+                                                      ElevatedButton(
+                                                        onPressed: () => Navigator.pop(c, true),
+                                                        style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+                                                        child: const Text('REMOVE', style: TextStyle(color: Colors.white)),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                );
+                                                if (confirm != true) return;
+                                                _deletedExercises.add(exId);
+                                              }
+                                            }
+                                            setState(() => day.exercises.removeAt(exIndex));
+                                          },
                                           child: const Icon(Icons.close, size: 24, color: Colors.redAccent),
                                         ),
                                     ],

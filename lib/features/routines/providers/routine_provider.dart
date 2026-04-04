@@ -20,33 +20,7 @@ class RoutineNotifier extends Notifier<List<Routine>> {
         final List<dynamic> jsonList = json.decode(data);
         state = jsonList.map((e) => Routine.fromMap(e)).toList();
       } else {
-        // Initial setup with a demo routine for UI testing
-        state = [
-          Routine(
-            id: 'demo1',
-            name: 'Push Day - Hypertrophy',
-            mainObjective: 'Hypertrophy',
-            description: 'Intense chest, shoulders, and triceps focus.',
-            days: [
-              RoutineDay(
-                id: 'd1',
-                day: 1,
-                name: 'Chest Focus',
-                exercises: [
-                  WorkoutExercise(
-                    id: 'e1',
-                    sequence: 1,
-                    name: 'Bench Press',
-                    youtubeLink: '',
-                    description: '4 sets of 8-10 reps',
-                    sets: 4,
-                    restTime: 1.5,
-                  )
-                ]
-              )
-            ]
-          )
-        ];
+        state = [];
       }
     } catch (e) {
       state = [];

@@ -45,6 +45,9 @@ dependencies:
   url_launcher: ^6.3.0
   image_picker: ^1.0.8
   audioplayers: ^5.2.1
+  carousel_slider: ^5.1.2
+  file_picker: ^8.0.0+1
+  file_saver: ^0.2.12
 
 dev_dependencies:
   flutter_test:

@@ -1,4 +1,4 @@
-# Prompt Draft
+# Prompt For BBH Beautiful Body & Health Application 
 
 _Use this file to draft long prompts, new feature requests, or complex instructions. Once you are ready, you can just tell Antigravity:_ **"Please read `prompt.md` and implement the features requested there."**
 
@@ -10,6 +10,7 @@ _Use this file to draft long prompts, new feature requests, or complex instructi
 - Look & feel and UX must be really professional. I expect the best of AI to solve this!!
 - Transitions between screens
 - i18n applyed for all labels used in the App
+	- Texts in examples inside the fields MUST be translated too.
 - Only one main bar at the very upper part of the screen. Please validate this cause it is having two in some places
 ## Screen navigation
 - **Objective:** define the way the screens are being connected among themselves in the system
@@ -19,11 +20,12 @@ _Use this file to draft long prompts, new feature requests, or complex instructi
 	  Main screen related to Workout
 		- Menu option to Track Session
 		- Menu option to Routine definition
+		- Menu option to Tracked sessions
 	- **"Health Screen"**
 	  Main screen related to Health
 		- Menu option to Weight Tracking
 
-## Routine data relationsheep
+## Routine data relationship
 - **Objective:** relationsheep between data structures 
 	- DONT WORRY IF DATASTRUCTURES ARE NOT BACKWARD COMPATIBLE.
 - A Routine HAS one or more Routine´s days
@@ -61,6 +63,7 @@ _Use this file to draft long prompts, new feature requests, or complex instructi
 }
 
 -RoutineTracking
+
 {
  date: tracking date;
  Routine: Selected by the user from available ones;
@@ -70,24 +73,43 @@ _Use this file to draft long prompts, new feature requests, or complex instructi
 	 {
 	   weight used: number;
 	   Notes: notes related to the tracking. (Optional)
+	   finished: boolean. Indicates that the exercise was finished
 	 }
+ state: State of the tracking: STARTED | FINISHED 
+ percentage: percent of the routine finished (Read Only)
 }
+-- The unique key in order to persist and fetch data is date,Routine, RoutineDay
 
  
 ## WorkoutTracking screen Details
 ### ** MUST be really user frendly the way to fill out this data!!!! ** 
 - The user can watch the Youtube video associated to the exercise
-- The user can see the pictures associated to the exercise. NOT Implemented!
+  - IT MUST work for a real Android device
+- The user can see the pictures associated to the exercise. 
+	- Implement a friendly mode to see the pictures associated to the exercise. 
+		- A carousel navigation mode should be activated when more than one picture is associated.
 - The user must add the weight used in the exercise
 - Optional: The user can add observations (Notes)
 - This must be persisted and edited when the user needs it
 - When the day is showed Add the name between "()"
+- A check box for an exercise in order to indicate that the exercise was performed. 
+-- At least the weight must be informed in order to finish an exercise
+- percentage is calculated as: number of exercises finished / number of exercises for the selected day * 100
 - Countdown Timer functionality:
 	- Besides the time to rest add a button that represents a clock UI professional please!
 		- When pressed a countdown timer appears as a popup and starts to count down the remainig time to finish the time to rest takin as initial time the defined in the exercise. 
 	- Once reached perform a really friendly song as a remainder that it finished and close the popup
 	- The popup can be cancelled if the user desires this
+### Rules for the management of the state
+- Only one WorkoutTracking register can be on state STARTED
+- The user must confirm that he has finished the Tracking confirming it with a special action (Please find out a rally user friendly way to implement it)
+- It is on state STARTED when it is persisted and the used didnt confirmed that it was finished 
+- When a WorkoutTracking is finished, the system must:
+	-- persist it
+	-- return to the previous screen
 
+
+ 
 ## RoutineDefinition screen Details: 
 ### ** MUST be really user frendly the way to fill out this data!!!! ** 
 - Allow a user to Create, Read, Update and Delete of Routines and Exercises 
@@ -98,13 +120,27 @@ _Use this file to draft long prompts, new feature requests, or complex instructi
 	- About the Exercises
 		- Allow to be removed 
 		- Allow to be updated
-		- For pictures use a picture chooser from galery. Please Implement it!
-		- Define the time to rest as a decimal datatype with one decimal place. It represents minutes.
+		- For pictures use a picture chooser from galery.
+			- It must be compatible with png, jpg, gif file formats
+			- It must work for any final platform
+		- Define the time to rest as a decimal datatype with one decimal place. Rest time (minutes). 
 	
-
-
-## Profile screen Details:
-- **Objective:** Capability to select the unit measure managed by the system
+## Tracked sessions screen Details:
+### ** MUST be really user frendly the way to fill out this data!!!! **
+- **Objective:** Capability to query and see all the past tracked workout sessions
+- **Key Details:**
+	- Functionality to see ALL past workout sessions
+	- graphics showing progression in weights over the time
+		- This progression must be comparing the exaclty same exercise that belongs to the routine and specific day
+	- graphics showing days in week and in last 30 days with workout sessions
+	
+## Profile and  configuration screen Details:
+- **Objective:** Profile: Identify yourself and get more info and gain access to other systems in order to interoperate
+	- login using gmail authentication (Optional)
+		- Using GMAIL, connect it to Drive
+		- Allow the user to export all the structures with data and send it to a Google Drive document
+		- Allow the user to import data from Google Drive		
+- **Objective:** Configuration: Capability to select the unit measure managed by the system
 - **Key Details:**
   - From profile menu add a new entry called "Weight Unit" (Just after language) 
   - Let the user select between Kilos and Pounds (DONT APPLY ANY CONVERTION JUST LEAVE THE VALUES RAW AS IS)
@@ -116,4 +152,6 @@ _Use this file to draft long prompts, new feature requests, or complex instructi
   - On Weight tracking Screen add a graph showing Weight progression over time. This is generated using the weight filled in by the user. 
   - Only show the date in the x axis when we have a plot related in Y axis
   - Dont let te user add a weight for a given date more than once
+  
+ 
   

@@ -1,10 +1,18 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:file_saver/file_saver.dart';
+import 'package:file_picker/file_picker.dart';
+import 'dart:typed_data';
+
 import '../providers/profile_provider.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/models/user_profile.dart';
+import 'package:beautiful_welcome/features/routines/providers/routine_provider.dart';
+import 'package:beautiful_welcome/features/tracking/providers/tracking_provider.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -93,7 +101,96 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     });
   }
 
- 
+  Future<void> _exportData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final profile = prefs.getString('user_profile') ?? '{}';
+      final routines = prefs.getString('saved_routines') ?? '[]';
+      final logs = prefs.getString('saved_logs') ?? '[]';
+
+      final Map<String, dynamic> exportData = {
+        'user_profile': profile,
+        'saved_routines': routines,
+        'saved_logs': logs,
+      };
+
+      final jsonString = json.encode(exportData);
+      final bytes = Uint8List.fromList(utf8.encode(jsonString));
+      
+      final fileName = 'bbh_backup_${DateTime.now().millisecondsSinceEpoch}';
+      
+      await FileSaver.instance.saveFile(
+        name: fileName,
+        bytes: bytes,
+        ext: 'json',
+        mimeType: MimeType.json,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Export downloaded successfully!'), backgroundColor: AppColors.accent),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Export failed: $e'), backgroundColor: Colors.redAccent),
+        );
+      }
+    }
+  }
+
+  Future<void> _importData() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+        withData: true,
+      );
+
+      if (result != null && result.files.single.bytes != null) {
+        final content = utf8.decode(result.files.single.bytes!);
+        final Map<String, dynamic> importData = json.decode(content);
+        
+        final prefs = await SharedPreferences.getInstance();
+        if (importData.containsKey('user_profile')) {
+          await prefs.setString('user_profile', importData['user_profile']);
+        }
+        if (importData.containsKey('saved_routines')) {
+          await prefs.setString('saved_routines', importData['saved_routines']);
+        }
+        if (importData.containsKey('saved_logs')) {
+          await prefs.setString('saved_logs', importData['saved_logs']);
+        }
+
+        // Force reload of riverpod providers
+        ref.invalidate(profileProvider);
+        ref.invalidate(routineProvider);
+        ref.invalidate(trackingProvider);
+
+        if (mounted) {
+           ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Import successful!'), backgroundColor: AppColors.accent),
+          );
+          // Update local state variables to match new profile
+          final newProfile = ref.read(profileProvider);
+          setState(() {
+            _nameController.text = newProfile.name;
+            _selectedBirthDate = newProfile.birthDate;
+            _selectedLocale = newProfile.localeCode;
+            _selectedWeightUnit = newProfile.weightUnit;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Import failed or invalid file: $e'), backgroundColor: Colors.redAccent),
+        );
+      }
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -213,6 +310,41 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   style: const TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
+              
+              const SizedBox(height: 48),
+              const Divider(color: Colors.white12),
+              const SizedBox(height: 16),
+              const Text('DATA MANAGEMENT', style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                   Expanded(
+                     child: OutlinedButton.icon(
+                        onPressed: _exportData,
+                        icon: const Icon(Icons.upload_file),
+                        label: const Text('Export Backup'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.accent,
+                          side: const BorderSide(color: AppColors.accent),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                     )
+                   ),
+                   const SizedBox(width: 16),
+                   Expanded(
+                     child: OutlinedButton.icon(
+                        onPressed: _importData,
+                        icon: const Icon(Icons.download),
+                        label: const Text('Import Backup'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          side: const BorderSide(color: Colors.white54),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                     )
+                   ),
+                ]
+              )
             ],
           ),
         ),

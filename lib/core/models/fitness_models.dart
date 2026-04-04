@@ -1,5 +1,9 @@
 import 'dart:convert';
 
+enum WorkoutLogStatus {
+  started,
+  finished,
+}
 class WorkoutExercise {
   final String id;
   final int sequence;
@@ -127,11 +131,13 @@ class ExerciseLog {
   final String exerciseId;
   final double weight;
   final String notes;
+  final bool finished;
 
   ExerciseLog({
     required this.exerciseId,
     required this.weight,
     this.notes = '',
+    this.finished = false,
   });
 
   Map<String, dynamic> toMap() {
@@ -139,6 +145,7 @@ class ExerciseLog {
       'exerciseId': exerciseId,
       'weight': weight,
       'notes': notes,
+      'finished': finished,
     };
   }
 
@@ -147,6 +154,7 @@ class ExerciseLog {
       exerciseId: map['exerciseId'] ?? '',
       weight: (map['weight'] ?? 0.0).toDouble(),
       notes: map['notes'] ?? '',
+      finished: map['finished'] ?? false,
     );
   }
 }
@@ -157,6 +165,8 @@ class WorkoutLog {
   final String routineId;
   final String routineDayId;
   final List<ExerciseLog> exerciseLogs;
+  final WorkoutLogStatus status;
+  final double percentage;
 
   WorkoutLog({
     required this.id,
@@ -164,6 +174,8 @@ class WorkoutLog {
     required this.routineId,
     required this.routineDayId,
     required this.exerciseLogs,
+    this.status = WorkoutLogStatus.started,
+    this.percentage = 0.0,
   });
 
   Map<String, dynamic> toMap() {
@@ -173,6 +185,8 @@ class WorkoutLog {
       'routineId': routineId,
       'routineDayId': routineDayId,
       'exerciseLogs': exerciseLogs.map((x) => x.toMap()).toList(),
+      'status': status.name,
+      'percentage': percentage,
     };
   }
 
@@ -185,6 +199,11 @@ class WorkoutLog {
       exerciseLogs: List<ExerciseLog>.from(
         (map['exerciseLogs'] ?? []).map((x) => ExerciseLog.fromMap(x)),
       ),
+      status: WorkoutLogStatus.values.firstWhere(
+        (e) => e.name == map['status'],
+        orElse: () => WorkoutLogStatus.started,
+      ),
+      percentage: (map['percentage'] ?? 0.0).toDouble(),
     );
   }
 

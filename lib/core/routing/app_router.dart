@@ -5,6 +5,7 @@ import 'package:beautiful_welcome/features/routines/presentation/screens/create_
 import 'package:beautiful_welcome/features/tracking/presentation/screens/track_workout_screen.dart';
 import 'package:beautiful_welcome/features/profile/presentation/screens/profile_screen.dart';
 import 'package:beautiful_welcome/features/health/presentation/screens/health_dashboard_screen.dart';
+import 'package:beautiful_welcome/features/tracking/presentation/screens/analytics_screen.dart';
 import 'package:beautiful_welcome/features/welcome/presentation/screens/welcome_screen.dart';
 import 'package:beautiful_welcome/core/routing/main_scaffold.dart';
 
@@ -32,6 +33,14 @@ final appRouter = GoRouter(
             GoRoute(
               path: '/workout',
               builder: (context, state) => const RoutinesDashboardScreen(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/history',
+              builder: (context, state) => const AnalyticsScreen(),
             ),
           ],
         ),
