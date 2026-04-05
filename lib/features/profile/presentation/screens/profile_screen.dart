@@ -116,26 +116,28 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       
       for (var r in routinesList) {
         final routineMap = Map<String, dynamic>.from(r);
-        final routineId = routineMap['id'];
         final currentDays = routineMap['days'] as List<dynamic>? ?? [];
         
+        final dayIds = [];
         for (var d in currentDays) {
           final dayMap = Map<String, dynamic>.from(d);
           final dayId = dayMap['id'];
-          dayMap['routineId'] = routineId; // attach foreign key
+          dayIds.add(dayId);
           
           final currentExercises = dayMap['exercises'] as List<dynamic>? ?? [];
+          final exerciseIds = [];
           for (var ex in currentExercises) {
             final exMap = Map<String, dynamic>.from(ex);
-            exMap['routineDayId'] = dayId; // attach foreign key
+            final exId = exMap['id'];
+            exerciseIds.add(exId);
             normalizedExercises.add(exMap);
           }
           
-          dayMap.remove('exercises');
+          dayMap['exercises'] = exerciseIds; // Array of references
           normalizedDays.add(dayMap);
         }
         
-        routineMap.remove('days');
+        routineMap['days'] = dayIds; // Array of references
         normalizedRoutines.add(routineMap);
       }
 
@@ -207,19 +209,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           final flatExercises = List<Map<String, dynamic>>.from((importData['exercises'] as List? ?? []).map((x) => Map<String, dynamic>.from(x)));
           
           for (var day in flatDays) {
-            final dayId = day['id'];
-            day['exercises'] = flatExercises.where((e) => e['routineDayId'] == dayId).toList();
-            for(var ex in day['exercises']) {
-              ex.remove('routineDayId');
+            final exIds = day['exercises'] as List<dynamic>? ?? [];
+            final populatedExercises = [];
+            for (var exId in exIds) {
+               final ex = flatExercises.firstWhere((e) => e['id'] == exId, orElse: () => <String, dynamic>{});
+               if (ex.isNotEmpty) populatedExercises.add(ex);
             }
+            day['exercises'] = populatedExercises;
           }
           
           for (var routine in flatsRoutines) {
-            final rId = routine['id'];
-            routine['days'] = flatDays.where((d) => d['routineId'] == rId).toList();
-            for(var d in routine['days']) {
-              d.remove('routineId');
+            final dayIds = routine['days'] as List<dynamic>? ?? [];
+            final populatedDays = [];
+            for (var dayId in dayIds) {
+               final d = flatDays.firstWhere((day) => day['id'] == dayId, orElse: () => <String, dynamic>{});
+               if (d.isNotEmpty) populatedDays.add(d);
             }
+            routine['days'] = populatedDays;
           }
           
           await prefs.setString('saved_routines', json.encode(flatsRoutines));

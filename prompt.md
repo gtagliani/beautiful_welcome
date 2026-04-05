@@ -105,6 +105,7 @@ _Use this file to draft long prompts, new feature requests, or complex instructi
 	- In case the routine is opened by the user AND it already has a routine is in state started, instead of creating a new one, just open the started one to be edited.
 - The user must confirm that he has finished the Tracking routine, confirming it with a special action 
 - It is on state STARTED when the user quits from the tracking screen, and the used didnt confirmed that it was finished 
+	- Save progress button must save progress and go back to the orevious screen (Change label to save progress and close)
 - When the user quits from WorkoutTracking screen, the system must:
 	-- persist it
 	-- return to the previous screen
@@ -140,8 +141,12 @@ _Use this file to draft long prompts, new feature requests, or complex instructi
 	- Allow the user to export all the structures 
 		- maintain the structures exported in a normalized way. Use IDs in order to mantain relationship2:
 			- Routines
-			- Workout days
+				- For each record,  mantain here the IDs referencing to the Workout Days as an array form.
+			- Workout Days
+				- For each record, mantain here the IDs referencing to the Exercises as an array form.
+				- Avoid link to the Routine.
 			- Exercises 
+				- Avoid a link to any other structure from this entity.
 			- Workout tracking
 	- Allow the user to import data 		
 - **Objective:** Configuration: Capability to select the unit measure managed by the system

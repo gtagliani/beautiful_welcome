@@ -535,9 +535,12 @@ class _TrackWorkoutScreenState extends ConsumerState<TrackWorkoutScreen> {
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () => _saveLog(finish: false),
+                      onPressed: () {
+                        _saveLog(finish: false);
+                        context.pop();
+                      },
                       icon: const Icon(Icons.save_outlined),
-                      label: const Text('SAVE PROGRESS'),
+                      label: const Text('SAVE PROGRESS AND CLOSE', textAlign: TextAlign.center),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 20),
                         foregroundColor: AppColors.accent,
