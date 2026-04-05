@@ -93,7 +93,7 @@ _Use this file to draft long prompts, new feature requests, or complex instructi
 - This must be persisted and edited when the user needs it
 - When the day is showed Add the name between "()"
 - A check box for an exercise in order to indicate that the exercise was performed. 
--- At least the weight must be informed in order to finish an exercise
+-- At least the weight must be informed in order to finish an exercise.
 - percentage is calculated as: number of exercises finished / number of exercises for the selected day * 100
 - Countdown Timer functionality:
 	- Besides the time to rest add a button that represents a clock UI professional please!
@@ -101,10 +101,11 @@ _Use this file to draft long prompts, new feature requests, or complex instructi
 	- Once reached perform a really friendly song as a remainder that it finished and close the popup
 	- The popup can be cancelled if the user desires this
 ### Rules for the management of the state
-- Only one WorkoutTracking register can be on state STARTED
-- The user must confirm that he has finished the Tracking confirming it with a special action (Please find out a rally user friendly way to implement it)
-- It is on state STARTED when it is persisted and the used didnt confirmed that it was finished 
-- When a WorkoutTracking is finished, the system must:
+- Only one WorkoutTracking register can be on state STARTED per ROUTINE
+	- In case the routine is opened by the user AND it already has a routine is in state started, instead of creating a new one, just open the started one to be edited.
+- The user must confirm that he has finished the Tracking routine, confirming it with a special action 
+- It is on state STARTED when the user quits from the tracking screen, and the used didnt confirmed that it was finished 
+- When the user quits from WorkoutTracking screen, the system must:
 	-- persist it
 	-- return to the previous screen
 
@@ -136,10 +137,13 @@ _Use this file to draft long prompts, new feature requests, or complex instructi
 	
 ## Profile and  configuration screen Details:
 - **Objective:** Profile: Identify yourself and get more info and gain access to other systems in order to interoperate
-	- login using gmail authentication (Optional)
-		- Using GMAIL, connect it to Drive
-		- Allow the user to export all the structures with data and send it to a Google Drive document
-		- Allow the user to import data from Google Drive		
+	- Allow the user to export all the structures 
+		- maintain the structures exported in a normalized way. Use IDs in order to mantain relationship2:
+			- Routines
+			- Workout days
+			- Exercises 
+			- Workout tracking
+	- Allow the user to import data 		
 - **Objective:** Configuration: Capability to select the unit measure managed by the system
 - **Key Details:**
   - From profile menu add a new entry called "Weight Unit" (Just after language) 

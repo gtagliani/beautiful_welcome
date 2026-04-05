@@ -108,10 +108,43 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       final routines = prefs.getString('saved_routines') ?? '[]';
       final logs = prefs.getString('saved_logs') ?? '[]';
 
+      final routinesList = json.decode(routines) as List<dynamic>;
+      
+      final normalizedRoutines = [];
+      final normalizedDays = [];
+      final normalizedExercises = [];
+      
+      for (var r in routinesList) {
+        final routineMap = Map<String, dynamic>.from(r);
+        final routineId = routineMap['id'];
+        final currentDays = routineMap['days'] as List<dynamic>? ?? [];
+        
+        for (var d in currentDays) {
+          final dayMap = Map<String, dynamic>.from(d);
+          final dayId = dayMap['id'];
+          dayMap['routineId'] = routineId; // attach foreign key
+          
+          final currentExercises = dayMap['exercises'] as List<dynamic>? ?? [];
+          for (var ex in currentExercises) {
+            final exMap = Map<String, dynamic>.from(ex);
+            exMap['routineDayId'] = dayId; // attach foreign key
+            normalizedExercises.add(exMap);
+          }
+          
+          dayMap.remove('exercises');
+          normalizedDays.add(dayMap);
+        }
+        
+        routineMap.remove('days');
+        normalizedRoutines.add(routineMap);
+      }
+
       final Map<String, dynamic> exportData = {
-        'user_profile': profile,
-        'saved_routines': routines,
-        'saved_logs': logs,
+        'user_profile': json.decode(profile),
+        'routines': normalizedRoutines,
+        'routine_days': normalizedDays,
+        'exercises': normalizedExercises,
+        'workout_tracking': json.decode(logs),
       };
 
       final jsonString = json.encode(exportData);
@@ -153,14 +186,45 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         final Map<String, dynamic> importData = json.decode(content);
         
         final prefs = await SharedPreferences.getInstance();
+        
         if (importData.containsKey('user_profile')) {
-          await prefs.setString('user_profile', importData['user_profile']);
+          // Normalize back to string if it was an object in the new export format
+          final profileData = importData['user_profile'];
+          await prefs.setString('user_profile', profileData is String ? profileData : json.encode(profileData));
         }
-        if (importData.containsKey('saved_routines')) {
-          await prefs.setString('saved_routines', importData['saved_routines']);
+        
+        if (importData.containsKey('workout_tracking')) {
+           final logsData = importData['workout_tracking'];
+           await prefs.setString('saved_logs', logsData is String ? logsData : json.encode(logsData));
+        } else if (importData.containsKey('saved_logs')) { // legacy
+           await prefs.setString('saved_logs', importData['saved_logs']);
         }
-        if (importData.containsKey('saved_logs')) {
-          await prefs.setString('saved_logs', importData['saved_logs']);
+
+        if (importData.containsKey('routines')) {
+          // Un-normalize new flattened format back to nested domain model
+          final flatsRoutines = List<Map<String, dynamic>>.from((importData['routines'] as List).map((x) => Map<String, dynamic>.from(x)));
+          final flatDays = List<Map<String, dynamic>>.from((importData['routine_days'] as List? ?? []).map((x) => Map<String, dynamic>.from(x)));
+          final flatExercises = List<Map<String, dynamic>>.from((importData['exercises'] as List? ?? []).map((x) => Map<String, dynamic>.from(x)));
+          
+          for (var day in flatDays) {
+            final dayId = day['id'];
+            day['exercises'] = flatExercises.where((e) => e['routineDayId'] == dayId).toList();
+            for(var ex in day['exercises']) {
+              ex.remove('routineDayId');
+            }
+          }
+          
+          for (var routine in flatsRoutines) {
+            final rId = routine['id'];
+            routine['days'] = flatDays.where((d) => d['routineId'] == rId).toList();
+            for(var d in routine['days']) {
+              d.remove('routineId');
+            }
+          }
+          
+          await prefs.setString('saved_routines', json.encode(flatsRoutines));
+        } else if (importData.containsKey('saved_routines')) { // legacy
+           await prefs.setString('saved_routines', importData['saved_routines']);
         }
 
         // Force reload of riverpod providers

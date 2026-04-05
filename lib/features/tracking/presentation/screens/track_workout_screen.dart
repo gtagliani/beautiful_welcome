@@ -32,46 +32,29 @@ class _TrackWorkoutScreenState extends ConsumerState<TrackWorkoutScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkForActiveSession();
-    });
-  }
-
-  void _checkForActiveSession() {
-    final activeSession = ref.read(trackingProvider.notifier).getActiveSession();
-    // If there is an active session, ensure it's not the one we are creating right now
-    if (activeSession != null && activeSession.id != _currentLogId) {
-      showDialog(
-        context: context,
-        barrierDismissible: false, // Force them to choose
-        builder: (context) {
-          return AlertDialog(
-            backgroundColor: AppColors.background,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: const Text('Unfinished Tracking', style: TextStyle(color: AppColors.accent)),
-            content: const Text(
-                'You have an unfinished workout session in progress. Closing it will set it to "finished", allowing you to start this new one.',
-                style: TextStyle(color: Colors.white70)),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  context.pop(); // close dialog
-                  context.pop(); // return to previous screen, cancelling this new tracking
-                },
-                child: const Text('CANCEL', style: TextStyle(color: Colors.redAccent)),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  ref.read(trackingProvider.notifier).finishSession(activeSession.id);
-                  context.pop(); // close dialog, safely continue with current screen
-                },
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent),
-                child: const Text('CLOSE OPEN SESSION', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-              ),
-            ],
-          );
-        },
-      );
+    // Check if we have an active session for THIS routine
+    final activeSession = ref.read(trackingProvider.notifier).getActiveSessionForRoutine(widget.routineId);
+    if (activeSession != null) {
+      _currentLogId = activeSession.id;
+      _selectedDate = activeSession.date;
+      
+      try {
+        final routine = ref.read(routineProvider).firstWhere((r) => r.id == widget.routineId);
+        _selectedDay = routine.days.firstWhere((d) => d.id == activeSession.routineDayId);
+        
+        for (var ex in _selectedDay!.exercises) {
+          _weightControllers[ex.id] = TextEditingController();
+          _notesControllers[ex.id] = TextEditingController();
+          _exerciseFinished[ex.id] = false;
+        }
+        for (var log in activeSession.exerciseLogs) {
+          _weightControllers[log.exerciseId]?.text = log.weight > 0 ? log.weight.toString() : '';
+          _notesControllers[log.exerciseId]?.text = log.notes;
+          _exerciseFinished[log.exerciseId] = log.finished;
+        }
+      } catch (e) {
+        _selectedDay = null; // fallback to default init loop
+      }
     }
   }
 
@@ -103,7 +86,7 @@ class _TrackWorkoutScreenState extends ConsumerState<TrackWorkoutScreen> {
 
   String _generateId() => "${DateTime.now().millisecondsSinceEpoch}${math.Random().nextInt(1000)}";
 
-  void _saveLog({bool finish = false}) {
+  void _saveLog({bool finish = false, bool silent = false}) {
     if (_selectedDay == null) return;
     
     final exerciseLogs = <ExerciseLog>[];
@@ -144,16 +127,17 @@ class _TrackWorkoutScreenState extends ConsumerState<TrackWorkoutScreen> {
     
     ref.read(trackingProvider.notifier).saveLog(log);
     
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(finish ? 'Workout Finished!' : 'Progress saved.', 
-            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
-        backgroundColor: AppColors.accent,
-      ),
-    );
-    
-    if (finish) {
-      context.pop();
+    if (!silent) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(finish ? 'Workout Finished!' : 'Progress saved.', 
+              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
+          backgroundColor: AppColors.accent,
+        ),
+      );
+      if (finish) {
+        context.pop();
+      }
     }
   }
 
@@ -283,9 +267,15 @@ class _TrackWorkoutScreenState extends ConsumerState<TrackWorkoutScreen> {
         ? (currentFinished / _selectedDay!.exercises.length) * 100
         : 0.0;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n?.trackSession ?? 'TRACK SESSION'),
+    return PopScope(
+      canPop: true,
+      onPopInvoked: (didPop) {
+         // Auto-save silently when the user hits back button or gestures out
+         _saveLog(finish: false, silent: true);
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(l10n?.trackSession ?? 'TRACK SESSION'),
         actions: [
           IconButton(
             icon: const Icon(Icons.person),
@@ -596,6 +586,7 @@ class _TrackWorkoutScreenState extends ConsumerState<TrackWorkoutScreen> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

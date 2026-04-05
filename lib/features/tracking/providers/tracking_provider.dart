@@ -45,9 +45,9 @@ class TrackingNotifier extends Notifier<List<WorkoutLog>> {
     await _saveToStorage();
   }
 
-  WorkoutLog? getActiveSession() {
+  WorkoutLog? getActiveSessionForRoutine(String routineId) {
     try {
-      return state.firstWhere((log) => log.status == WorkoutLogStatus.started);
+      return state.firstWhere((log) => log.routineId == routineId && log.status == WorkoutLogStatus.started);
     } catch (e) {
       return null;
     }
